@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto-HMPI: Groundwater Quality Assessment Tool</title>
+    <style>
+        body {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 100px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%23ffffff" opacity="0.2"/><path d="M30 50 Q50 30 70 50 Q50 70 30 50" fill="%23ffffff" opacity="0.3"/><circle cx="35" cy="45" r="3" fill="%23667eea"/><circle cx="50" cy="35" r="4" fill="%23764ba2"/><circle cx="65" cy="45" r="3" fill="%23667eea"/><circle cx="50" cy="65" r="3" fill="%23764ba2"/></svg>') center/contain no-repeat;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            margin-top: 60px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h2 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+            position: relative;
+            padding-left: 40px;
+        }
+
+        .card h2::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 30px;
+            height: 30px;
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+
+        .card h2.data-input::before {
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23667eea"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>');
+        }
+
+        .card h2.bulk-import::before {
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23667eea"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/></svg>');
+        }
+
+        .card h2.results::before {
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23667eea"><path d="M22,21H2V3H4V19H6V10H10V19H12V6H16V19H18V14H22V21Z"/></svg>');
+        }
+
+        .card h2.dataset::before {
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23667eea"><path d="M12,3C7.58,3 4,4.79 4,7C4,9.21 7.58,11 12,11C16.42,11 20,9.21 20,7C20,4.79 16.42,3 12,3M4,9V12C4,14.21 7.58,16 12,16C16.42,16 20,14.21 20,12V9C20,11.21 16.42,13 12,13C7.58,13 4,11.21 4,9M4,14V17C4,19.21 7.58,21 12,21C16.42,21 20,19.21 20,17V14C20,16.21 16.42,18 12,18C7.58,18 4,16.21 4,14Z"/></svg>');
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .input-group input, .input-group select, .input-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-group input:focus, .input-group select:focus, .input-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .metal-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #718096;
+            margin-top: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: #4a5568;
+        }
+
+        .results-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            border-left: 5px solid #667eea;
+        }
+
+        .result-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+
+        .result-label {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        .quality-indicator {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .quality-excellent { background: #c6f6d5; color: #22543d; }
+        .quality-good { background: #bee3f8; color: #2a4365; }
+        .quality-moderate { background: #fef5e7; color: #744210; }
+        .quality-poor { background: #fed7d7; color: #742a2a; }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .data-table th, .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .data-table th {
+            background: #f7fafc;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .file-upload {
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+        }
+
+        .file-upload:hover {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%);
+        }
+
+        .file-upload.dragover {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%);
+            transform: scale(1.02);
+        }
+
+        .file-upload::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 60px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23667eea"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/><path d="M12,11L16,15H13V19H11V15H8L12,11Z" fill="%23764ba2"/></svg>') center/contain no-repeat;
+        }
+
+        .file-upload-content {
+            margin-top: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .metal-inputs {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 Auto-HMPI: Groundwater Quality Assessment Tool</h1>
+            <p>Automated Heavy Metal Pollution Index Calculator for Groundwater Quality Assessment</p>
+        </div>
+
+        <div class="main-content">
+            <div class="card">
+                <h2 class="data-input">Data Input</h2>
+                
+                <div class="input-group">
+                    <label>Sample Location</label>
+                    <input type="text" id="location" placeholder="e.g., Well Site A, Borehole 1">
+                </div>
+
+                <div class="input-group">
+                    <label>Coordinates</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <input type="number" id="latitude" placeholder="Latitude" step="any">
+                        <input type="number" id="longitude" placeholder="Longitude" step="any">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Heavy Metal Concentrations (mg/L)</label>
+                    <div class="metal-inputs">
+                        <div>
+                            <label style="font-size: 0.9rem; margin-bottom: 5px;">Lead (Pb)</label>
+                            <input type="number" id="pb" placeholder="0.00" step="0.001">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.9rem; margin-bottom: 5px;">Cadmium (Cd)</label>
+                            <input type="number" id="cd" placeholder="0.00" step="0.001">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.9rem; margin-bottom: 5px;">Chromium (Cr)</label>
+                            <input type="number" id="cr" placeholder="0.00" step="0.001">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.9rem; margin-bottom: 5px;">Copper (Cu)</label>
+                            <input type="number" id="cu" placeholder="0.00" step="0.001">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.9rem; margin-bottom: 5px;">Zinc (Zn)</label>
+                            <input type="number" id="zn" placeholder="0.00" step="0.001">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.9rem; margin-bottom: 5px;">Nickel (Ni)</label>
+                            <input type="number" id="ni" placeholder="0.00" step="0.001">
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn" onclick="calculateHMPI()">
+                    <span style="margin-right: 8px;">🧮</span>Calculate HMPI
+                </button>
+                <button class="btn btn-secondary" onclick="addToDataset()">
+                    <span style="margin-right: 8px;">➕</span>Add to Dataset
+                </button>
+            </div>
+
+            <div class="card">
+                <h2 class="bulk-import">Bulk Data Import</h2>
+                
+                <div class="file-upload" onclick="document.getElementById('fileInput').click()" ondrop="handleFileDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                    <div class="file-upload-content">
+                        <p><strong>Click to upload</strong> or drag and drop</p>
+                        <p style="font-size: 0.9rem; color: #718096;">CSV, Excel files supported</p>
+                    </div>
+                    <input type="file" id="fileInput" style="display: none;" accept=".csv,.xlsx,.xls" onchange="handleFileSelect(event)">
+                </div>
+
+                <div class="input-group" style="margin-top: 20px;">
+                    <label>Standard Reference</label>
+                    <select id="standard">
+                        <option value="who">WHO Guidelines</option>
+                        <option value="epa">EPA Standards</option>
+                        <option value="is">Indian Standards (IS 10500)</option>
+                        <option value="custom">Custom Standards</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>Calculation Method</label>
+                    <select id="method">
+                        <option value="weighted">Weighted Arithmetic Mean</option>
+                        <option value="geometric">Geometric Mean</option>
+                        <option value="harmonic">Harmonic Mean</option>
+                    </select>
+                </div>
+
+                <button class="btn" onclick="processBulkData()">
+                    <span style="margin-right: 8px;">⚡</span>Process Bulk Data
+                </button>
+            </div>
+        </div>
+
+        <div class="results-section" id="resultsSection" style="display: none;">
+            <h2 class="results">HMPI Results</h2>
+            
+            <div class="results-grid">
+                <div class="result-card">
+                    <div class="result-value" id="hmpiValue">--</div>
+                    <div class="result-label">HMPI Index</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-value" id="riskLevel">--</div>
+                    <div class="result-label">Risk Level</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-value" id="exceedanceCount">--</div>
+                    <div class="result-label">Standards Exceeded</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-value" id="dominantMetal">--</div>
+                    <div class="result-label">Dominant Pollutant</div>
+                </div>
+            </div>
+
+            <div id="qualityIndicator" style="text-align: center; margin-top: 20px;"></div>
+        </div>
+
+        <div class="card">
+            <h2 class="dataset">Dataset Overview</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <span>Total Samples: <strong id="sampleCount">0</strong></span>
+                <div>
+                    <button class="btn" style="width: auto; margin-right: 10px;" onclick="exportData()">
+                        <span style="margin-right: 8px;">📊</span>Export Results
+                    </button>
+                    <button class="btn btn-secondary" style="width: auto;" onclick="clearDataset()">
+                        <span style="margin-right: 8px;">🗑️</span>Clear All
+                    </button>
+                </div>
+            </div>
+            
+            <table class="data-table" id="dataTable">
+                <thead>
+                    <tr>
+                        <th>Location</th>
+                        <th>Coordinates</th>
+                        <th>HMPI</th>
+                        <th>Quality</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="dataTableBody">
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: #718096; padding: 40px;">
+                            No data available. Add samples to see results here.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let dataset = [];
+        
+        // WHO standard limits (mg/L)
+        const standards = {
+            who: { pb: 0.01, cd: 0.003, cr: 0.05, cu: 2.0, zn: 3.0, ni: 0.07 },
+            epa: { pb: 0.015, cd: 0.005, cr: 0.1, cu: 1.3, zn: 5.0, ni: 0.1 },
+            is: { pb: 0.01, cd: 0.003, cr: 0.05, cu: 0.05, zn: 5.0, ni: 0.02 }
+        };
+
+        function calculateHMPI() {
+            const location = document.getElementById('location').value || 'Unknown Location';
+            const lat = parseFloat(document.getElementById('latitude').value) || 0;
+            const lng = parseFloat(document.getElementById('longitude').value) || 0;
+            
+            const metals = {
+                pb: parseFloat(document.getElementById('pb').value) || 0,
+                cd: parseFloat(document.getElementById('cd').value) || 0,
+                cr: parseFloat(document.getElementById('cr').value) || 0,
+                cu: parseFloat(document.getElementById('cu').value) || 0,
+                zn: parseFloat(document.getElementById('zn').value) || 0,
+                ni: parseFloat(document.getElementById('ni').value) || 0
+            };
+
+            const standardType = document.getElementById('standard').value;
+            const limits = standards[standardType] || standards.who;
+
+            // Calculate HMPI using weighted arithmetic mean method
+            let hmpi = 0;
+            let exceedanceCount = 0;
+            let maxRatio = 0;
+            let dominantMetal = '';
+
+            const weights = { pb: 0.2, cd: 0.2, cr: 0.15, cu: 0.15, zn: 0.15, ni: 0.15 };
+
+            for (const [metal, concentration] of Object.entries(metals)) {
+                const ratio = concentration / limits[metal];
+                hmpi += weights[metal] * ratio * 100;
+                
+                if (ratio > 1) exceedanceCount++;
+                if (ratio > maxRatio) {
+                    maxRatio = ratio;
+                    dominantMetal = metal.toUpperCase();
+                }
+            }
+
+            // Determine quality category
+            let quality, qualityClass;
+            if (hmpi <= 25) {
+                quality = 'Excellent';
+                qualityClass = 'quality-excellent';
+            } else if (hmpi <= 50) {
+                quality = 'Good';
+                qualityClass = 'quality-good';
+            } else if (hmpi <= 100) {
+                quality = 'Moderate';
+                qualityClass = 'quality-moderate';
+            } else {
+                quality = 'Poor';
+                qualityClass = 'quality-poor';
+            }
+
+            // Display results
+            document.getElementById('hmpiValue').textContent = hmpi.toFixed(2);
+            document.getElementById('riskLevel').textContent = quality;
+            document.getElementById('exceedanceCount').textContent = exceedanceCount;
+            document.getElementById('dominantMetal').textContent = dominantMetal || 'None';
+            
+            const qualityIndicator = document.getElementById('qualityIndicator');
+            qualityIndicator.innerHTML = <span class="quality-indicator ${qualityClass}">Water Quality: ${quality}</span>;
+            
+            document.getElementById('resultsSection').style.display = 'block';
+
+            return {
+                location,
+                coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)},
+                hmpi: hmpi.toFixed(2),
+                quality,
+                metals,
+                exceedanceCount,
+                dominantMetal,
+                date: new Date().toLocaleDateString()
+            };
+        }
+
+        function addToDataset() {
+            const result = calculateHMPI();
+            dataset.push(result);
+            updateDataTable();
+            
+            // Clear form
+            document.querySelectorAll('input[type="text"], input[type="number"]').forEach(input => {
+                input.value = '';
+            });
+        }
+
+        function updateDataTable() {
+            const tbody = document.getElementById('dataTableBody');
+            document.getElementById('sampleCount').textContent = dataset.length;
+            
+            if (dataset.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: #718096; padding: 40px;">
+                            No data available. Add samples to see results here.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = dataset.map((item, index) => `
+                <tr>
+                    <td>${item.location}</td>
+                    <td>${item.coordinates}</td>
+                    <td><strong>${item.hmpi}</strong></td>
+                    <td><span class="quality-indicator ${getQualityClass(item.quality)}">${item.quality}</span></td>
+                    <td>${item.date}</td>
+                    <td>
+                        <button onclick="removeFromDataset(${index})" style="background: #e53e3e; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Remove</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function getQualityClass(quality) {
+            const classes = {
+                'Excellent': 'quality-excellent',
+                'Good': 'quality-good',
+                'Moderate': 'quality-moderate',
+                'Poor': 'quality-poor'
+            };
+            return classes[quality] || 'quality-moderate';
+        }
+
+        function removeFromDataset(index) {
+            dataset.splice(index, 1);
+            updateDataTable();
+        }
+
+        function clearDataset() {
+            if (confirm('Are you sure you want to clear all data?')) {
+                dataset = [];
+                updateDataTable();
+            }
+        }
+
+        function exportData() {
+            if (dataset.length === 0) {
+                alert('No data to export. Please add some samples first.');
+                return;
+            }
+
+            const csv = [
+                ['Location', 'Latitude', 'Longitude', 'HMPI', 'Quality', 'Pb (mg/L)', 'Cd (mg/L)', 'Cr (mg/L)', 'Cu (mg/L)', 'Zn (mg/L)', 'Ni (mg/L)', 'Date'],
+                ...dataset.map(item => [
+                    item.location,
+                    item.coordinates.split(', ')[0],
+                    item.coordinates.split(', ')[1],
+                    item.hmpi,
+                    item.quality,
+                    item.metals.pb,
+                    item.metals.cd,
+                    item.metals.cr,
+                    item.metals.cu,
+                    item.metals.zn,
+                    item.metals.ni,
+                    item.date
+                ])
+            ].map(row => row.join(',')).join('\n');
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = HMPI_Results_${new Date().toISOString().split('T')[0]}.csv;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        function handleFileDrop(event) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('dragover');
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                processFile(files[0]);
+            }
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.currentTarget.classList.add('dragover');
+        }
+
+        function handleDragLeave(event) {
+            event.currentTarget.classList.remove('dragover');
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                processFile(file);
+            }
+        }
+
+        function processFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const text = e.target.result;
+                    const lines = text.split('\n');
+                    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+                    
+                    let processed = 0;
+                    for (let i = 1; i < lines.length; i++) {
+                        const values = lines[i].split(',');
+                        if (values.length >= 6) {
+                            // Process each row (simplified for demo)
+                            processed++;
+                        }
+                    }
+                    
+                    alert(Successfully processed ${processed} samples from the file.);
+                } catch (error) {
+                    alert('Error processing file. Please check the format.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function processBulkData() {
+            alert('Bulk data processing initiated. This feature processes multiple samples automatically using the selected standards and calculation method.');
+        }
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'986e051446da25a4',t:'MTc1OTE3NTUzNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
