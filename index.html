@@ -513,13 +513,13 @@
             document.getElementById('dominantMetal').textContent = dominantMetal || 'None';
             
             const qualityIndicator = document.getElementById('qualityIndicator');
-            qualityIndicator.innerHTML = <span class="quality-indicator ${qualityClass}">Water Quality: ${quality}</span>;
+            qualityIndicator.innerHTML = `<span class="quality-indicator ${qualityClass}">Water Quality: ${quality}</span>`;
             
             document.getElementById('resultsSection').style.display = 'block';
 
             return {
                 location,
-                coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)},
+                coordinates: `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
                 hmpi: hmpi.toFixed(2),
                 quality,
                 metals,
@@ -619,7 +619,7 @@
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = HMPI_Results_${new Date().toISOString().split('T')[0]}.csv;
+            a.download = `HMPI_Results_${new Date().toISOString().split('T')[0]}.csv`;
             a.click();
             window.URL.revokeObjectURL(url);
         }
@@ -666,7 +666,7 @@
                         }
                     }
                     
-                    alert(Successfully processed ${processed} samples from the file.);
+                    alert(`Successfully processed ${processed} samples from the file.`);
                 } catch (error) {
                     alert('Error processing file. Please check the format.');
                 }
